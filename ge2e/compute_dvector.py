@@ -5,7 +5,7 @@
 import os
 import argparse
 
-import torch as th
+import torch
 import numpy as np
 
 from utils import load_json
@@ -38,7 +38,7 @@ class NnetComputer(object):
         nnet_conf = load_json(cpt_dir, "mdl.json")
         nnet = Nnet(**nnet_conf)
         cpt_fname = os.path.join(cpt_dir, "best.pt.tar")
-        cpt = th.load(cpt_fname, map_location="cpu")
+        cpt = torch.load(cpt_fname, map_location="cpu")
         nnet.load_state_dict(cpt["model_state_dict"])
         logger.info("Load checkpoint from {}, epoch {:d}".format(
             cpt_fname, cpt["epoch"]))
@@ -55,7 +55,7 @@ class NnetComputer(object):
         elif N == 1:
             return feats[:self.chunk_size]
         else:
-            chunks = th.zeros([N, self.chunk_size, F],
+            chunks = torch.zeros([N, self.chunk_size, F],
                               device=feats.device,
                               dtype=feats.dtype)
             for n in range(N):
@@ -63,11 +63,11 @@ class NnetComputer(object):
             return chunks
 
     def compute(self, feats):
-        feats = th.tensor(feats, device=self.device)
-        with th.no_grad():
+        feats = torch.tensor(feats, device=self.device)
+        with torch.no_grad():
             chunks = self._make_chunk(feats)  # N x C x F
             dvector = self.nnet(chunks)  # N x D
-            dvector = th.mean(dvector, dim=0).detach()
+            dvector = torch.mean(dvector, dim=0).detach()
             return dvector.cpu().numpy()
 
 

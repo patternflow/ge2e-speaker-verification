@@ -1,2 +1,3 @@
-torch==1.0.0
-numpy==1.14.3
+torch
+numpy
+kaldi_python_io

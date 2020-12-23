@@ -13,7 +13,7 @@ echo "$0 $@"
 
 [ $# -ne 2 ] && echo "Script format error: $0 <gpuid> <cpt-id>" && exit 1
 
-./nnet/train_ge2e.py \
+./ge2e/train_ge2e.py \
   --M 10 \
   --N 64 \
   --gpu $1 \

@@ -9,7 +9,7 @@ import logging
 
 from collections import defaultdict
 
-import torch as th
+import torch
 import torch.nn as nn
 import torch.nn.functional as F
 
@@ -43,7 +43,7 @@ def load_obj(obj, device):
     """
 
     def cuda(obj):
-        return obj.to(device) if isinstance(obj, th.Tensor) else obj
+        return obj.to(device) if isinstance(obj, torch.Tensor) else obj
 
     if isinstance(obj, dict):
         return {key: load_obj(obj[key], device) for key in obj}
@@ -102,8 +102,8 @@ class Reporter(object):
 class GE2ELoss(nn.Module):
     def __init__(self):
         super(GE2ELoss, self).__init__()
-        self.w = nn.Parameter(th.tensor(10.0))
-        self.b = nn.Parameter(th.tensor(-5.0))
+        self.w = nn.Parameter(torch.tensor(10.0))
+        self.b = nn.Parameter(torch.tensor(-5.0))
 
     def forward(self, e, N, M):
         """
@@ -112,21 +112,21 @@ class GE2ELoss(nn.Module):
         M: number of utts
         """
         # N x D
-        c = th.mean(e, dim=1)
-        s = th.sum(e, dim=1)
+        c = torch.mean(e, dim=1)
+        s = torch.sum(e, dim=1)
         # NM * D
         e = e.view(N * M, -1)
         # compute similarity matrix: NM * N
-        sim = th.mm(e, th.transpose(c, 0, 1))
+        sim = torch.mm(e, torch.transpose(c, 0, 1))
         # fix similarity matrix: eq (8), (9)
         for j in range(N):
             for i in range(M):
                 cj = (s[j] - e[j * M + i]) / (M - 1)
-                sim[j * M + i][j] = th.dot(cj, e[j * M + i])
+                sim[j * M + i][j] = torch.dot(cj, e[j * M + i])
         # eq (5)
         sim = self.w * sim + self.b
         # build label N*M
-        ref = th.zeros(N * M, dtype=th.int64, device=e.device)
+        ref = torch.zeros(N * M, dtype=torch.int64, device=e.device)
         for r, s in enumerate(range(0, N * M, M)):
             ref[s:s + M] = r
         # ce loss
@@ -152,11 +152,11 @@ class GE2ETrainer(object):
                  logging_period=1000,
                  resume=None,
                  no_impr=6):
-        if not th.cuda.is_available():
+        if not torch.cuda.is_available():
             raise RuntimeError("CUDA device unavailable...exist")
         if not isinstance(gpuid, tuple):
             gpuid = (gpuid, )
-        self.device = th.device("cuda:{}".format(gpuid[0]))
+        self.device = torch.device("cuda:{}".format(gpuid[0]))
         self.gpuid = gpuid
         if checkpoint and not os.path.exists(checkpoint):
             os.makedirs(checkpoint)
@@ -173,7 +173,7 @@ class GE2ETrainer(object):
             if not os.path.exists(resume):
                 raise FileNotFoundError(
                     "Could not find resume checkpoint: {}".format(resume))
-            cpt = th.load(resume, map_location="cpu")
+            cpt = torch.load(resume, map_location="cpu")
             self.cur_epoch = cpt["epoch"]
             self.logger.info("Resume from checkpoint {}: epoch {:d}".format(
                 resume, self.cur_epoch))
@@ -216,19 +216,19 @@ class GE2ETrainer(object):
             "optim_state_dict": self.optimizer.state_dict(),
             "ge2e_state_dict": self.ge2e.state_dict()
         }
-        th.save(
+        torch.save(
             cpt,
             os.path.join(self.checkpoint,
                          "{0}.pt.tar".format("best" if best else "last")))
 
     def create_optimizer(self, optimizer, kwargs, state=None):
         supported_optimizer = {
-            "sgd": th.optim.SGD,  # momentum, weight_decay, lr
-            "rmsprop": th.optim.RMSprop,  # momentum, weight_decay, lr
-            "adam": th.optim.Adam,  # weight_decay, lr
-            "adadelta": th.optim.Adadelta,  # weight_decay, lr
-            "adagrad": th.optim.Adagrad,  # lr, lr_decay, weight_decay
-            "adamax": th.optim.Adamax  # lr, weight_decay
+            "sgd": torch.optim.SGD,  # momentum, weight_decay, lr
+            "rmsprop": torch.optim.RMSprop,  # momentum, weight_decay, lr
+            "adam": torch.optim.Adam,  # weight_decay, lr
+            "adadelta": torch.optim.Adadelta,  # weight_decay, lr
+            "adagrad": torch.optim.Adagrad,  # lr, lr_decay, weight_decay
+            "adamax": torch.optim.Adamax  # lr, weight_decay
             # ...
         }
         if optimizer not in supported_optimizer:
@@ -251,7 +251,7 @@ class GE2ETrainer(object):
         """
         N, M = egs["N"], egs["M"]
         # NM x D
-        embed = th.nn.parallel.data_parallel(
+        embed = torch.nn.parallel.data_parallel(
             self.nnet, egs["feats"], device_ids=self.gpuid)
         if embed.size(0) != N * M:
             raise RuntimeError(
@@ -285,7 +285,7 @@ class GE2ETrainer(object):
         self.nnet.eval()
         reporter = Reporter(self.logger, period=self.logging_period)
 
-        with th.no_grad():
+        with torch.no_grad():
             for egs in data_loader:
                 egs = load_obj(egs, self.device)
                 loss = self.compute_loss(egs)
@@ -294,7 +294,7 @@ class GE2ETrainer(object):
 
     def run(self, train_loader, dev_loader, num_epochs=50):
         # avoid alloc memory from gpu0
-        with th.cuda.device(self.gpuid[0]):
+        with torch.cuda.device(self.gpuid[0]):
             stats = dict()
             # check if save is OK
             self.save_checkpoint(best=False)

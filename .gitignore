@@ -1,6 +1,7 @@
 .vscode/
 __pycache__/
 ge2e/libs/
+ckpt/
 .*.py
 *.yaml
 egs.py

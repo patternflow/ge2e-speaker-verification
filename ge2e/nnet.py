@@ -1,7 +1,7 @@
 # wujian@2018
 
 import math
-import torch as th
+import torch
 import torch.nn as nn
 
 import torch.nn.functional as F
@@ -41,7 +41,7 @@ class TorchRNN(nn.Module):
                 raise RuntimeError(
                     "RNN expect input dim as 2 or 3, got {:d}".format(x.dim()))
             if x.dim() != 3:
-                x = th.unsqueeze(x, 0)
+                x = torch.unsqueeze(x, 0)
         x, _ = self.rnn(x)
         # using unpacked sequence
         # x: NxTxD
@@ -49,7 +49,7 @@ class TorchRNN(nn.Module):
             x, _ = pad_packed_sequence(
                 x, batch_first=True, total_length=total_length)
         if squeeze:
-            x = th.squeeze(x)
+            x = torch.squeeze(x)
         return x
 
 
@@ -65,7 +65,7 @@ class Nnet(nn.Module):
             x = self.linear(x[:, -1, :])
         else:
             x = self.linear(x[-1, :])
-        return x / th.norm(x, dim=-1, keepdim=True)
+        return x / torch.norm(x, dim=-1, keepdim=True)
 
 
 def foo_lstm():
@@ -76,7 +76,7 @@ def foo_lstm():
         "lstm_conf": lstm_conf
     }
     nnet = Nnet(**nnet_conf)
-    x = th.rand(100, 40)
+    x = torch.rand(100, 40)
     x = nnet(x)
     print(x.shape)
 

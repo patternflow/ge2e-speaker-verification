@@ -50,13 +50,13 @@ if __name__ == "__main__":
         "auto configured from conf.py",
         formatter_class=argparse.ArgumentDefaultsHelpFormatter)
     parser.add_argument(
-        "--gpu", type=str, default=0, help="Training on which GPUs")
+        "--gpu", type=str, default="1", help="Training on which GPUs")
     parser.add_argument(
         "--epochs", type=int, default=50, help="Number of training epochs")
     parser.add_argument(
         "--checkpoint",
         type=str,
-        required=True,
+        default="ckpt",
         help="Directory to dump models")
     parser.add_argument(
         "--N", type=int, default=64, help="Number of speakers in each batch")
@@ -83,7 +83,7 @@ if __name__ == "__main__":
     parser.add_argument(
         "--resume",
         type=str,
-        default="",
+        default=None,
         help="Checkpoint to resume training process")
     args = parser.parse_args()
     logger.info("Arguments in command:\n{}".format(pprint.pformat(vars(args))))

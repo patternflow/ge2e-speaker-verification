@@ -4,7 +4,7 @@ import random
 import os.path as op
 
 import numpy as np
-import torch as th
+import torch
 
 from kaldi_python_io import Reader, ScriptReader
 
@@ -49,7 +49,7 @@ class SpeakerSampler(object):
                 else:
                     chunk = np.pad(utt, ((pad, 0), (0, 0)), "edge")
                     chunks.append(chunk)
-        eg["feats"] = th.from_numpy(np.stack(chunks))
+        eg["feats"] = torch.from_numpy(np.stack(chunks))
         return eg
 
 
